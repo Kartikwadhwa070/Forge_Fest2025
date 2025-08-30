@@ -21,6 +21,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity;
     private bool isGrounded;
 
+    private CharacterPusher pusher;
+
     [Header("Camera")]
     public float mouseSensitivity = 2;
 
@@ -34,6 +36,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         characterController = GetComponent<CharacterController>();
+        pusher = GetComponent<CharacterPusher>();
         if (characterController == null)
         {
             Debug.LogError("CharacterController component is missing on this GameObject.");
@@ -84,6 +87,8 @@ public class PlayerController : MonoBehaviour
 
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
         float currentSpeed = isCrouching ? crouchSpeed : speed;
+        if (pusher != null)
+            pusher.SetMoveVector(move * currentSpeed);
         characterController.Move(move * currentSpeed * Time.deltaTime);
     }
 
