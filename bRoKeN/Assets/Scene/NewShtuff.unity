@@ -59430,7 +59430,7 @@ GameObject:
   - component: {fileID: 1671341427}
   - component: {fileID: 1671341426}
   m_Layer: 0
-  m_Name: Plane (1)
+  m_Name: TableTopColliederPlane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -63883,7 +63883,7 @@ GameObject:
   - component: {fileID: 1802043033}
   - component: {fileID: 1802043032}
   m_Layer: 6
-  m_Name: Cube (2)
+  m_Name: PushableCube
   m_TagString: Pushable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -63972,7 +63972,7 @@ Transform:
   m_GameObject: {fileID: 1802043027}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -39.3, y: 9.91, z: -8.3}
+  m_LocalPosition: {x: -38.25, y: 9.91, z: -6.61}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -64001,7 +64001,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1802043027}
   serializedVersion: 4
-  m_Mass: 0.01
+  m_Mass: 2
   m_Drag: 0
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -75192,7 +75192,7 @@ GameObject:
   - component: {fileID: 2104707474}
   - component: {fileID: 2104707473}
   m_Layer: 0
-  m_Name: Cube (3)
+  m_Name: PressurePlate1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
