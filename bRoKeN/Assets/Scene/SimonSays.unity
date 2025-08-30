@@ -12431,8 +12431,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
-  connect4Gate: {fileID: 0}
-  requireConnect4Solved: 0
+  connect4Gate: {fileID: 644179458}
+  requireConnect4Solved: 1
 --- !u!65 &335216167
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -35709,8 +35709,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
-  connect4Gate: {fileID: 0}
-  requireConnect4Solved: 0
+  connect4Gate: {fileID: 644179458}
+  requireConnect4Solved: 1
 --- !u!65 &949537099
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -40544,12 +40544,6 @@ MonoBehaviour:
   - {fileID: 335216166}
   - {fileID: 2017104284}
   - {fileID: 949537098}
-  onAllPressed:
-    m_PersistentCalls:
-      m_Calls: []
-  onAnyReleased:
-    m_PersistentCalls:
-      m_Calls: []
   latchWhenSolved: 1
   simonSays: {fileID: 378832097}
   wiresToTurnOn:
@@ -40561,6 +40555,36 @@ MonoBehaviour:
   connect4Gate: {fileID: 644179458}
   requireConnect4Solved: 1
   forceResetGlowWhileLocked: 1
+  onAllPressed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1105646106}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onAnyReleased:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1105646104}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1001 &1106511067
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47651,7 +47675,7 @@ PrefabInstance:
       objectReference: {fileID: 1713855892}
     - target: {fileID: 467790595649253363, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: markSolvedOnStart
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 467790595649253363, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: wiresToFlicker.Array.size
@@ -61547,8 +61571,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
-  connect4Gate: {fileID: 0}
-  requireConnect4Solved: 0
+  connect4Gate: {fileID: 644179458}
+  requireConnect4Solved: 1
 --- !u!65 &1683217866
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -73997,8 +74021,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
-  connect4Gate: {fileID: 0}
-  requireConnect4Solved: 0
+  connect4Gate: {fileID: 644179458}
+  requireConnect4Solved: 1
 --- !u!65 &2017104285
 BoxCollider:
   m_ObjectHideFlags: 0

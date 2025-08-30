@@ -2,7 +2,7 @@
 - Project name: bRoKeN
 - Unity version: Unity 6000.0.32f1
 - Active game object:
-  - Name: Connect4Manager
+  - Name: PressurePlateGroup
   - Tag: Untagged
   - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->

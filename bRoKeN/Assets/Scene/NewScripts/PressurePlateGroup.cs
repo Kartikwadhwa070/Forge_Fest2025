@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;          // needed for StartCoroutine
 using UnityEngine.Events;
 
 public class PressurePlateGroup : MonoBehaviour
@@ -6,15 +7,11 @@ public class PressurePlateGroup : MonoBehaviour
     [Header("Plates to Monitor")]
     public PressurePlate[] plates;
 
-    [Header("Events")]
-    public UnityEvent onAllPressed;   // fires when all plates are pressed
-    public UnityEvent onAnyReleased;  // fires when any plate releases (optional)
-
     [Header("Behavior")]
-    [Tooltip("If true, onAllPressed fires only once until ResetGroup() is called.")]
+    [Tooltip("If true, fire the solve actions only once until ResetGroup() is called.")]
     public bool latchWhenSolved = true;
 
-    bool solved;
+    private bool solved;
 
     [Header("Simon Says Activation")]
     [Tooltip("Simon Says puzzle to enable once ALL plates are pressed.")]
@@ -39,13 +36,17 @@ public class PressurePlateGroup : MonoBehaviour
     [Tooltip("If true, when locked, reset all plate glows to normal for visual clarity.")]
     public bool forceResetGlowWhileLocked = true;
 
-
+    // (Optional) still expose events if you want extra hooks in the editor
+    [Header("Optional Events")]
+    public UnityEvent onAllPressed;   // fires when all plates are pressed (after built-in actions)
+    public UnityEvent onAnyReleased;  // fires when any plate releases (when not latched)
 
     void OnEnable()
     {
-        // Cheap polling keeps setup simple (no manual event wiring)
+        // Polling keeps setup simple (no manual event wiring)
         InvokeRepeating(nameof(CheckState), 0.1f, 0.1f);
-        ApplyGateState(); // NEW
+
+        ApplyGateState(); // disable all plate colliders until Connect 4 is solved
 
         // Lock Simon at start if gating is on
         if (gateSimonUntilSolved && simonSays != null)
@@ -59,70 +60,98 @@ public class PressurePlateGroup : MonoBehaviour
 
     void CheckState()
     {
-        // NEW: keep plate colliders synced with gate state
+        // Keep plate colliders synced with the Connect4 gate
         ApplyGateState();
 
-        // If locked, do nothing else this tick
+        // If Connect 4 hasn’t been solved yet, ignore plate logic entirely
         if (requireConnect4Solved && connect4Gate != null && !connect4Gate.IsSolved)
-            return;
+            return; // uses Connect4Manager.IsSolved :contentReference[oaicite:0]{index=0}
 
         if (plates == null || plates.Length == 0) return;
 
-        bool all = true;
+        bool allPressed = true;
         for (int i = 0; i < plates.Length; i++)
         {
             var p = plates[i];
             if (p == null || !p.IsPressed)
             {
-                all = false;
+                allPressed = false;
                 break;
             }
         }
 
-        if (all)
+        if (allPressed)
         {
             if (!solved)
             {
                 solved = true;
+
+                // ---- BUILT-IN ACTIONS ----
+                // 1) Unlock Simon
+                if (simonSays != null && gateSimonUntilSolved)
+                    simonSays.SetInteractionEnabled(true);
+
+                // 2) Player feedback: wires flicker then glow
+                if (wiresToTurnOn != null)
+                {
+                    foreach (var w in wiresToTurnOn)
+                    {
+                        if (!w) continue;
+                        if (flickerOnActivate) StartCoroutine(w.FlickerThenGlow()); // WireGlowController coroutine
+                        else w.SetGlowingState();
+                    }
+                }
+                // --------------------------
+
+                // Optional editor hooks
                 onAllPressed?.Invoke();
             }
-            if (!latchWhenSolved) solved = false;
+
+            if (!latchWhenSolved)
+                solved = false; // allow repeated firing if desired
         }
         else
         {
-            if (solved && !latchWhenSolved) onAnyReleased?.Invoke();
-            if (!latchWhenSolved) solved = false;
+            if (solved && !latchWhenSolved)
+                onAnyReleased?.Invoke();
+
+            if (!latchWhenSolved)
+                solved = false;
         }
     }
+
     void ApplyGateState()
     {
-        bool locked = requireConnect4Solved && connect4Gate != null && !connect4Gate.IsSolved; // ← uses Connect4Manager.IsSolved
+        bool locked = requireConnect4Solved && connect4Gate != null && !connect4Gate.IsSolved;
         if (plates == null) return;
 
         foreach (var p in plates)
         {
             if (!p) continue;
-            var col = p.GetComponent<Collider>();
-            if (col) col.enabled = !locked;              // hard-disable interaction
 
+            // Hard-disable interaction on every plate while locked
+            var col = p.GetComponent<Collider>();
+            if (col) col.enabled = !locked;
+
+            // Reset glow for clear “off” visuals
             if (locked && forceResetGlowWhileLocked && p.glow)
-                p.glow.SetNormalState();                 // make it obvious they’re off
+                p.glow.SetNormalState(); // WireGlowController normal/glow swap :contentReference[oaicite:1]{index=1}
         }
     }
-
-
 
     public void ResetGroup()
     {
         solved = false;
 
-        // Optionally, reset glow on plates
+        // Reset plate visuals
         foreach (var p in plates)
             if (p && p.glow) p.glow.SetNormalState();
 
         // Relock Simon on reset if gating is on
         if (gateSimonUntilSolved && simonSays != null)
             simonSays.SetInteractionEnabled(false);
-        ApplyGateState(); // NEW: re-apply gate after reset
+
+        // Re-apply Connect4 gate after reset
+        ApplyGateState();
     }
 }
