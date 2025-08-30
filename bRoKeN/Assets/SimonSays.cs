@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Video;           // NEW: for VideoPlayer
+using UnityEngine.SceneManagement; // NEW: for optional return to MainMenu
 
 public class SimonSays : MonoBehaviour
 {
@@ -28,6 +30,25 @@ public class SimonSays : MonoBehaviour
     public AudioClip failSound;
     public AudioClip startButtonSound;
 
+    // -------------------------------
+    // NEW: Optional cutscene on success
+    // -------------------------------
+    [Header("Cutscene (Optional)")]
+    [Tooltip("If true, play a cutscene after the Simon Says puzzle is solved.")]
+    public bool playCutsceneOnSuccess = false;
+
+    [Tooltip("VideoPlayer to play when the puzzle is solved.")]
+    public VideoPlayer winVideo;
+
+    [Tooltip("Canvas that contains the VideoPlayer and optional prompt UI.")]
+    public GameObject endCanvas;
+
+    [Tooltip("UI prompt shown after the video ends (e.g., 'Press P to return').")]
+    public GameObject promptMessage;
+
+    private bool promptActive = false;
+    // -------------------------------
+
     private List<int> sequence = new List<int>();
     private List<int> playerInput = new List<int>();
     private bool isShowingSequence = false;
@@ -38,7 +59,7 @@ public class SimonSays : MonoBehaviour
     private bool[] buttonPressed = new bool[4];
     private bool startButtonPressed = false;
 
-    // 🔧 Light fix: remember original colors so we can restore them after failure flashes
+    // Light fix: remember original colors so we can restore them after failure flashes
     private Color[] originalLightColors = new Color[4];
 
     private Camera playerCamera;
@@ -47,30 +68,26 @@ public class SimonSays : MonoBehaviour
     [Tooltip("If false, clicks are ignored and Start cannot be pressed.")]
     public bool interactionEnabled = false;
 
-    public void SetInteractionEnabled(bool enabled)
-    {
-        interactionEnabled = enabled;
-    }
+    public void SetInteractionEnabled(bool enabled) => interactionEnabled = enabled;
 
     void Start()
     {
-        // Get the main camera (assuming it's the player's camera)
+        // match your Connect4 pattern: ensure cutscene UI starts hidden
+        if (endCanvas) endCanvas.SetActive(false);
+        if (promptMessage) promptMessage.SetActive(false);
+
+        // Get the main camera
         playerCamera = Camera.main;
-        if (playerCamera == null)
-            playerCamera = FindObjectOfType<Camera>();
+        if (playerCamera == null) playerCamera = FindObjectOfType<Camera>();
 
-        // Store original button positions
+        // Store button/home positions
         for (int i = 0; i < buttons.Length; i++)
-        {
-            if (buttons[i] != null)
-                originalButtonPositions[i] = buttons[i].localPosition;
-        }
+            if (buttons[i] != null) originalButtonPositions[i] = buttons[i].localPosition;
 
-        // Store original start button position
         if (startButton != null)
             originalStartButtonPosition = startButton.localPosition;
 
-        // 🔧 Light fix: cache original colors & turn lights off initially
+        // Cache original light colors & turn them off
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
@@ -81,6 +98,13 @@ public class SimonSays : MonoBehaviour
         }
     }
 
+    void OnDisable()
+    {
+        // safety: unhook video callback if we had one
+        if (winVideo != null)
+            winVideo.loopPointReached -= OnVideoFinished;
+    }
+
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -89,7 +113,7 @@ public class SimonSays : MonoBehaviour
             HandleMouseClick();
         }
 
-        // Handle button return animations for game buttons
+        // Return animations
         for (int i = 0; i < buttons.Length; i++)
         {
             if (buttons[i] != null && !buttonPressed[i])
@@ -102,7 +126,6 @@ public class SimonSays : MonoBehaviour
             }
         }
 
-        // Handle start button return animation
         if (startButton != null && !startButtonPressed)
         {
             startButton.localPosition = Vector3.Lerp(
@@ -110,6 +133,13 @@ public class SimonSays : MonoBehaviour
                 originalStartButtonPosition,
                 Time.deltaTime * buttonReturnSpeed
             );
+        }
+
+        // Optional: same UX as Connect4 — after video ends, let player press P
+        if (promptActive && Input.GetKeyDown(KeyCode.P))
+        {
+            Debug.Log("P pressed. Loading Main Menu...");
+            SceneManager.LoadScene("MainMenu");
         }
     }
 
@@ -120,7 +150,7 @@ public class SimonSays : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, buttonLayerMask))
         {
-            // Check if start button was hit
+            // Start button?
             if (startButton != null && (hit.collider.transform == startButton || hit.collider.transform.parent == startButton))
             {
                 if (!gameStarted && !IsGameActive())
@@ -130,7 +160,7 @@ public class SimonSays : MonoBehaviour
                 return;
             }
 
-            // Check which game button was hit (only if game is active and waiting for input)
+            // Game buttons?
             if (waitingForInput)
             {
                 for (int i = 0; i < buttons.Length; i++)
@@ -148,19 +178,13 @@ public class SimonSays : MonoBehaviour
     void PressStartButton()
     {
         Debug.Log("Start button pressed! Beginning Simon Says...");
-
         if (!interactionEnabled) return;
 
-        // Animate start button press
         StartCoroutine(AnimateStartButtonPress());
 
-        // Play start button sound if available
         if (audioSource != null && startButtonSound != null)
-        {
             audioSource.PlayOneShot(startButtonSound);
-        }
 
-        // Start the game
         StartNewGame();
     }
 
@@ -169,46 +193,31 @@ public class SimonSays : MonoBehaviour
         if (startButton == null) yield break;
 
         startButtonPressed = true;
-
         Vector3 pressedPosition = originalStartButtonPosition + startButton.forward * -startButtonPressDepth;
         startButton.localPosition = pressedPosition;
-
         yield return new WaitForSeconds(0.15f);
-
         startButtonPressed = false;
     }
 
     void PressButton(int buttonIndex)
     {
-        if (!waitingForInput || buttonIndex < 0 || buttonIndex >= buttons.Length)
-            return;
+        if (!waitingForInput || buttonIndex < 0 || buttonIndex >= buttons.Length) return;
 
-        // Animate button press
         StartCoroutine(AnimateButtonPress(buttonIndex));
 
-        // Play sound if available
         if (audioSource != null && buttonSounds[buttonIndex] != null)
-        {
             audioSource.PlayOneShot(buttonSounds[buttonIndex]);
-        }
 
-        // Add to player input
         playerInput.Add(buttonIndex);
 
-        // Check if this input is correct so far
         if (playerInput[playerInput.Count - 1] != sequence[playerInput.Count - 1])
         {
-            // Wrong input - restart
             StartCoroutine(HandleFailure());
             return;
         }
 
-        // Check if sequence is complete
         if (playerInput.Count >= sequence.Count)
-        {
-            // Success!
             StartCoroutine(HandleSuccess());
-        }
     }
 
     IEnumerator AnimateButtonPress(int buttonIndex)
@@ -216,18 +225,14 @@ public class SimonSays : MonoBehaviour
         if (buttons[buttonIndex] == null) yield break;
 
         buttonPressed[buttonIndex] = true;
-
         Vector3 pressedPosition = originalButtonPositions[buttonIndex] + buttons[buttonIndex].forward * -buttonPressDepth;
         buttons[buttonIndex].localPosition = pressedPosition;
-
         yield return new WaitForSeconds(0.1f);
-
         buttonPressed[buttonIndex] = false;
     }
 
     public void StartNewGame()
     {
-        // Don't start if already running
         if (IsGameActive())
         {
             Debug.Log("Simon Says is already running!");
@@ -241,11 +246,8 @@ public class SimonSays : MonoBehaviour
 
         Debug.Log("Starting Simon Says sequence...");
 
-        // Generate a random sequence of 4
         for (int i = 0; i < 4; i++)
-        {
             sequence.Add(Random.Range(0, 4));
-        }
 
         StartCoroutine(ShowSequence());
     }
@@ -255,27 +257,19 @@ public class SimonSays : MonoBehaviour
         isShowingSequence = true;
         waitingForInput = false;
 
-        yield return new WaitForSeconds(1f); // Initial delay
+        yield return new WaitForSeconds(1f);
 
         for (int i = 0; i < sequence.Count; i++)
         {
             int lightIndex = sequence[i];
 
-            // Turn on light
-            if (lights[lightIndex] != null)
-                lights[lightIndex].enabled = true;
-
-            // Play sound if available
+            if (lights[lightIndex] != null) lights[lightIndex].enabled = true;
             if (audioSource != null && buttonSounds[lightIndex] != null)
-            {
                 audioSource.PlayOneShot(buttonSounds[lightIndex]);
-            }
 
             yield return new WaitForSeconds(lightDuration);
 
-            // Turn off light
-            if (lights[lightIndex] != null)
-                lights[lightIndex].enabled = false;
+            if (lights[lightIndex] != null) lights[lightIndex].enabled = false;
 
             yield return new WaitForSeconds(sequenceDelay);
         }
@@ -289,33 +283,23 @@ public class SimonSays : MonoBehaviour
     {
         waitingForInput = false;
 
-        // Play success sound
         if (audioSource != null && successSound != null)
-        {
             audioSource.PlayOneShot(successSound);
-        }
 
-        // Flash all lights
+        // flash lights
         for (int flash = 0; flash < 3; flash++)
         {
             for (int i = 0; i < lights.Length; i++)
-            {
-                if (lights[i] != null)
-                    lights[i].enabled = true;
-            }
+                if (lights[i] != null) lights[i].enabled = true;
 
             yield return new WaitForSeconds(0.2f);
 
             for (int i = 0; i < lights.Length; i++)
-            {
-                if (lights[i] != null)
-                    lights[i].enabled = false;
-            }
+                if (lights[i] != null) lights[i].enabled = false;
 
             yield return new WaitForSeconds(0.2f);
         }
 
-        // Call success function
         OnSequenceCompleted();
     }
 
@@ -323,13 +307,9 @@ public class SimonSays : MonoBehaviour
     {
         waitingForInput = false;
 
-        // Play fail sound
         if (audioSource != null && failSound != null)
-        {
             audioSource.PlayOneShot(failSound);
-        }
 
-        // Flash all lights red (temporary)
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
@@ -341,7 +321,7 @@ public class SimonSays : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        // 🔧 Light fix: restore ORIGINAL colors and turn off
+        // restore original colors and turn off
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
@@ -353,18 +333,18 @@ public class SimonSays : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        // Show sequence again
         StartCoroutine(ShowSequence());
     }
 
-    // This function is called when the player successfully completes the sequence
+    // Called when the player successfully completes the sequence
     public void OnSequenceCompleted()
     {
         Debug.Log("Simon Says sequence completed successfully!");
         gameStarted = false; // Reset so start button can be used again
 
-        // Add your custom success logic here
-        // e.g., open door / trigger next puzzle, etc.
+        // NEW: optional cutscene trigger
+        if (playCutsceneOnSuccess)
+            StartWinCutscene();
     }
 
     // Public method to restart the game
@@ -373,19 +353,43 @@ public class SimonSays : MonoBehaviour
         StopAllCoroutines();
         gameStarted = false;
 
-        // Turn off all lights
         for (int i = 0; i < lights.Length; i++)
-        {
-            if (lights[i] != null)
-                lights[i].enabled = false;
-        }
+            if (lights[i] != null) lights[i].enabled = false;
 
         Debug.Log("Simon Says game reset. Press start button to begin again.");
     }
 
-    // Public method to check if the game is currently active
-    public bool IsGameActive()
+    public bool IsGameActive() => waitingForInput || isShowingSequence;
+
+    // -------------------------------
+    // NEW: Cutscene helpers (mirror Connect4)
+    // -------------------------------
+    private void StartWinCutscene()
     {
-        return waitingForInput || isShowingSequence;
+        if (winVideo != null)
+        {
+            if (endCanvas != null) endCanvas.SetActive(true);
+            if (promptMessage != null) promptMessage.SetActive(false);
+            promptActive = false;
+
+            winVideo.loopPointReached -= OnVideoFinished; // avoid double-subscribe
+            winVideo.loopPointReached += OnVideoFinished;
+            winVideo.Play();
+        }
+        else
+        {
+            Debug.LogWarning("Play Cutscene On Success is enabled, but no VideoPlayer is assigned.");
+        }
+    }
+
+    private void OnVideoFinished(VideoPlayer vp)
+    {
+        vp.loopPointReached -= OnVideoFinished;
+
+        if (endCanvas != null) endCanvas.SetActive(false);
+        if (promptMessage != null) promptMessage.SetActive(true);
+        promptActive = true;
+
+        Debug.Log("SimonSays win video finished. Press P to go back to the Main Menu to play again.");
     }
 }
