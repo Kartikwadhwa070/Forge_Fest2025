@@ -40,6 +40,15 @@ public class SimonSays : MonoBehaviour
 
     private Camera playerCamera;
 
+    [Header("Gating")]
+    [Tooltip("If false, clicks are ignored and Start cannot be pressed.")]
+    public bool interactionEnabled = false;
+
+    public void SetInteractionEnabled(bool enabled)
+    {
+        interactionEnabled = enabled;
+    }
+
     void Start()
     {
         // Get the main camera (assuming it's the player's camera)
@@ -70,6 +79,8 @@ public class SimonSays : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
+            if (!interactionEnabled) return;
+
             HandleMouseClick();
         }
 
@@ -132,6 +143,8 @@ public class SimonSays : MonoBehaviour
     void PressStartButton()
     {
         Debug.Log("Start button pressed! Beginning Simon Says...");
+
+        if (!interactionEnabled) return;
 
         // Animate start button press
         StartCoroutine(AnimateStartButtonPress());
