@@ -1,8 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Video;           // Required for VideoPlayer
-using UnityEngine.SceneManagement; // Required for scene management
 
 public class Connect4Manager : MonoBehaviour
 {
@@ -20,14 +18,14 @@ public class Connect4Manager : MonoBehaviour
         public Transform[] slots;
     }
 
-    // Array of columns – assign these in the Inspector.
+    // Array of columns â€“ assign these in the Inspector.
     public Column[] columns;
 
     // Disc prefabs for the player and computer. Assign your 3D disc models here.
     public GameObject playerDiscPrefab;
     public GameObject computerDiscPrefab;
 
-    // Range for the computer’s move delay (in seconds).
+    // Range for the computer's move delay (in seconds).
     public float minDelay = 1.0f;
     public float maxDelay = 2.0f;
 
@@ -37,6 +35,7 @@ public class Connect4Manager : MonoBehaviour
     public List<WireGlowController> wiresToFlicker; // List of wires to flicker on player win
 
     // Audio clips for various events.
+    [Header("Audio")]
     [Tooltip("Sound played when the player places a disc.")]
     public AudioClip playerPlaceSound;
     [Tooltip("Sound played when the computer places a disc.")]
@@ -51,20 +50,10 @@ public class Connect4Manager : MonoBehaviour
     // Reference to an AudioSource component.
     private AudioSource audioSource;
 
-    // VideoPlayer to play a video when the puzzle is solved (player wins).
-    [Header("Video Player")]
-    public VideoPlayer winVideo; // Assign your VideoPlayer component here via the Inspector
-
-    // Reference to the canvas that holds the VideoPlayer.
-    // This canvas should be disabled on Awake.
-    public GameObject endCanvas;
-
-    // UI prompt message to tell the user to press P to return to the Main Menu.
-    // This should be disabled by default.
-    public GameObject promptMessage;
-
-    // Flag used to indicate that the win video has finished and the prompt is active.
-    private bool promptActive = false;
+    // Mirror system integration
+    [Header("Mirror System Integration")]
+    public MirrorChainController mirrorChainController; // Reference to the mirror system
+    public bool triggerMirrorsOnWin = true; // Whether to trigger mirrors when player wins
 
     // Internal board state where board[col, row] stores:
     // 0 = empty, 1 = player disc, 2 = computer disc.
@@ -76,30 +65,31 @@ public class Connect4Manager : MonoBehaviour
     // Flag to disable player input while the computer is moving or after a win.
     private bool inputEnabled = true;
 
-    // Awake is called before Start.
-    void Awake()
-    {
-        // Ensure that the end canvas and prompt are disabled as soon as this object awakes.
-        if (endCanvas != null)
-        {
-            endCanvas.SetActive(false);
-        }
-        if (promptMessage != null)
-        {
-            promptMessage.SetActive(false);
-        }
-    }
+    // Inspector testing controls
+    [Header("Inspector Testing Controls")]
+    [Tooltip("Complete Connect4 puzzle instantly (for testing mirror puzzle)")]
+    public bool completeConnect4Puzzle = false;
+    [Tooltip("Reset the Connect4 board")]
+    public bool resetBoard = false;
 
     void Start()
     {
         board = new int[numColumns, numRows];
-        InitializeBoard();
-        Debug.Log("Connect4Manager started.");
+
+        // Initialize audio source first
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
             Debug.LogWarning("No AudioSource found on Connect4Manager object. Please add one.");
         }
+
+        // Setup mirror system callbacks BEFORE initializing board
+        SetupMirrorCallbacks();
+
+        // Initialize the board (this will reset mirror system too)
+        InitializeBoard();
+
+        Debug.Log("Connect4Manager started.");
 
         // Freeze gameplay until the required wire is turned on.
         if (requiredWire != null && !requiredWire.isGlowing)
@@ -111,11 +101,40 @@ public class Connect4Manager : MonoBehaviour
 
     void Update()
     {
-        // After the video ends and the prompt is active, wait for the user to press P.
-        if (promptActive && Input.GetKeyDown(KeyCode.P))
+        // Inspector testing controls
+        HandleInspectorControls();
+    }
+
+    // Handle inspector testing controls
+    void HandleInspectorControls()
+    {
+        // Complete Connect4 puzzle instantly
+        if (completeConnect4Puzzle)
         {
-            Debug.Log("P pressed. Loading Main Menu...");
-            SceneManager.LoadScene("MainMenu");
+            completeConnect4Puzzle = false; // Reset the flag
+            Debug.Log("Inspector: Completing Connect4 puzzle instantly...");
+            HandleConnect4Completion();
+        }
+
+        // Reset board
+        if (resetBoard)
+        {
+            resetBoard = false; // Reset the flag
+            Debug.Log("Inspector: Resetting Connect4 board...");
+            InitializeBoard();
+        }
+    }
+
+    // Setup callbacks for mirror system events
+    void SetupMirrorCallbacks()
+    {
+        if (mirrorChainController != null)
+        {
+            mirrorChainController.OnSequenceStart.AddListener(OnMirrorSequenceStart);
+            mirrorChainController.OnSequenceComplete.AddListener(OnMirrorSequenceComplete);
+
+            // Ensure mirror system is reset to initial state
+            mirrorChainController.ResetSystem();
         }
     }
 
@@ -134,12 +153,22 @@ public class Connect4Manager : MonoBehaviour
             Destroy(disc);
         }
         activeDiscs.Clear();
+
+        // Reset game state flags
         inputEnabled = true;
+
+        // Reset mirror system if it exists (but don't do this during Start() to avoid conflicts)
+        if (mirrorChainController != null && Time.time > 0.1f) // Small delay to avoid Start() conflicts
+        {
+            mirrorChainController.ResetSystem();
+        }
 
         if (audioSource != null && resetSound != null)
         {
             audioSource.PlayOneShot(resetSound);
         }
+
+        Debug.Log("Connect4 board initialized successfully.");
     }
 
     int InsertDisc(int column, DiscType discType)
@@ -180,7 +209,7 @@ public class Connect4Manager : MonoBehaviour
 
     public void OnColumnButtonPressed(int column)
     {
-        if (!inputEnabled)
+        if (!inputEnabled || (mirrorChainController != null && mirrorChainController.IsSequenceActive()))
             return;
 
         int row = InsertDisc(column, DiscType.Player);
@@ -189,24 +218,7 @@ public class Connect4Manager : MonoBehaviour
             if (CheckWin(column, row, (int)DiscType.Player))
             {
                 Debug.Log("Player won!");
-                if (audioSource != null && playerWinSound != null)
-                    audioSource.PlayOneShot(playerWinSound);
-
-                // Trigger wire flicker effect when the player wins.
-                TriggerWireFlickerEffect();
-
-                // Enable the canvas and play the win video.
-                if (winVideo != null)
-                {
-                    if (endCanvas != null)
-                        endCanvas.SetActive(true);
-
-                    winVideo.Play();
-                    // Subscribe to the event to know when the video finishes.
-                    winVideo.loopPointReached += OnVideoFinished;
-                }
-
-                inputEnabled = false;  // Freeze gameplay after a win.
+                HandleConnect4Completion();
                 return;
             }
 
@@ -223,6 +235,29 @@ public class Connect4Manager : MonoBehaviour
         else
         {
             Debug.Log("Column " + column + " is already full. Please choose a different column.");
+        }
+    }
+
+    // Handle Connect4 completion (either by winning or inspector button)
+    void HandleConnect4Completion()
+    {
+        if (audioSource != null && playerWinSound != null)
+            audioSource.PlayOneShot(playerWinSound);
+
+        // Trigger wire flicker effect
+        TriggerWireFlickerEffect();
+
+        // Trigger mirror sequence if enabled
+        if (triggerMirrorsOnWin && mirrorChainController != null)
+        {
+            Debug.Log("Connect4 completed! Starting mirror puzzle...");
+            mirrorChainController.TriggerSequence();
+            inputEnabled = false; // Disable Connect4 input during mirror sequence
+        }
+        else
+        {
+            // No mirrors, just reset after delay
+            StartCoroutine(ResetBoardAfterDelay());
         }
     }
 
@@ -337,22 +372,36 @@ public class Connect4Manager : MonoBehaviour
         inputEnabled = true; // Enable gameplay.
     }
 
-    // This method is called when the win video finishes playing.
-    private void OnVideoFinished(VideoPlayer vp)
+    // Called when mirror sequence starts
+    void OnMirrorSequenceStart()
     {
-        // Unsubscribe from the event so it doesn't fire again.
-        vp.loopPointReached -= OnVideoFinished;
-        // Disable the canvas after the video is complete.
-        if (endCanvas != null)
+        Debug.Log("Connect4: Mirror sequence started, Connect4 input disabled.");
+        inputEnabled = false;
+    }
+
+    // Called when mirror sequence completes
+    void OnMirrorSequenceComplete()
+    {
+        Debug.Log("Connect4: Mirror sequence completed. Mirror puzzle is now active!");
+        // Keep Connect4 input disabled - the mirror puzzle is now the active game
+    }
+
+    // Public method to manually trigger the mirror sequence (for other scripts)
+    public void TriggerMirrorSequence()
+    {
+        if (mirrorChainController != null)
         {
-            endCanvas.SetActive(false);
+            mirrorChainController.TriggerSequence();
         }
-        // Activate the prompt message and set the flag.
-        if (promptMessage != null)
+    }
+
+    // Public method to reset everything
+    public void ResetEverything()
+    {
+        if (mirrorChainController != null)
         {
-            promptMessage.SetActive(true);
+            mirrorChainController.ResetSystem();
         }
-        promptActive = true;
-        Debug.Log("Win video finished. Press P to go back to the Main Menu to play again.");
+        InitializeBoard();
     }
 }
