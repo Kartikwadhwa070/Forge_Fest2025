@@ -12374,6 +12374,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
+  connect4Gate: {fileID: 0}
+  requireConnect4Solved: 0
 --- !u!65 &335216167
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -35311,6 +35313,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
+  connect4Gate: {fileID: 0}
+  requireConnect4Solved: 0
 --- !u!65 &949537099
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -47210,7 +47214,7 @@ PrefabInstance:
       objectReference: {fileID: 1713855892}
     - target: {fileID: 467790595649253363, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: markSolvedOnStart
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 467790595649253363, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: wiresToFlicker.Array.size
@@ -60949,6 +60953,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
+  connect4Gate: {fileID: 0}
+  requireConnect4Solved: 0
 --- !u!65 &1683217866
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -73397,6 +73403,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
+  connect4Gate: {fileID: 0}
+  requireConnect4Solved: 0
 --- !u!65 &2017104285
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -76984,6 +76992,8 @@ MonoBehaviour:
   onReleased:
     m_PersistentCalls:
       m_Calls: []
+  connect4Gate: {fileID: 644179458}
+  requireConnect4Solved: 1
 --- !u!1001 &2105347554
 PrefabInstance:
   m_ObjectHideFlags: 0

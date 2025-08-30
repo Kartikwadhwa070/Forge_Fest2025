@@ -13,6 +13,8 @@ public class Connect4Manager : MonoBehaviour
     // Disc types (Empty = 0, Player = 1, Computer = 2)
     public enum DiscType { Empty = 0, Player = 1, Computer = 2 };
 
+    public bool IsSolved => puzzleSolved;
+
     // A serializable class representing one column of board slots.
     [System.Serializable]
     public class Column

@@ -34,6 +34,16 @@ public class PressurePlate : MonoBehaviour
     readonly HashSet<Rigidbody> bodies = new HashSet<Rigidbody>();
     bool playerInside = false;
 
+    [Header("Gating")]
+    [Tooltip("If set, this plate ONLY works after the referenced Connect4 is solved.")]
+    public Connect4Manager connect4Gate;
+
+    [Tooltip("Require Connect 4 to be solved before this plate can be pressed.")]
+    public bool requireConnect4Solved = false;
+
+    bool GateActive => !requireConnect4Solved || (connect4Gate != null && connect4Gate.IsSolved);
+
+
     void Awake()
     {
         triggerCol = GetComponent<Collider>();
@@ -45,18 +55,21 @@ public class PressurePlate : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        if (!GateActive) return;
         TryAdd(other);
         Recompute();
     }
 
     void OnTriggerExit(Collider other)
     {
+        if (!GateActive) return;
         TryRemove(other);
         Recompute();
     }
 
     void OnTriggerStay(Collider other)
     {
+        if (!GateActive) return;
         // Handles cases where objects are added while asleep/teleported
         Recompute();
     }
@@ -93,6 +106,17 @@ public class PressurePlate : MonoBehaviour
 
     void Recompute()
     {
+        if (!GateActive)
+        {
+            // If the gate turns OFF while something sits here, force a visual+state release.
+            if (IsPressed)
+            {
+                IsPressed = false;
+                if (glow != null) glow.SetNormalState(); // uses your WireGlowController
+                onReleased?.Invoke();
+            }
+            return;
+        }
         float total = 0f;
 
         if (playerInside) total += playerVirtualMass;
