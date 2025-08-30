@@ -1,16 +1,15 @@
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 
 public class SequentialUI : MonoBehaviour
 {
-    [Header("Assign your UI elements in order (Image/Text/Image/Text...)")]
+    [Header("Assign your UI elements in order (Image, TMP Text, Image, TMP Text...)")]
     public GameObject[] uiElements;
 
-    [Header("Delay Settings")]
-    public float delayBetween = 1f; // time between elements appearing
-    public bool useTypewriter = true;
-    public float typewriterSpeed = 0.05f; // for text only
+    [Header("Timing Settings")]
+    public float delayBetween = 1f;        // time between elements
+    public float typewriterSpeed = 0.05f;  // speed for text typing
 
     void Start()
     {
@@ -20,7 +19,6 @@ public class SequentialUI : MonoBehaviour
             element.SetActive(false);
         }
 
-        // Start the sequence
         StartCoroutine(ShowElementsSequentially());
     }
 
@@ -30,27 +28,32 @@ public class SequentialUI : MonoBehaviour
         {
             element.SetActive(true);
 
-            // If it's a text and typewriter is enabled
-            Text text = element.GetComponent<Text>();
-            if (useTypewriter && text != null)
+            // If this element has a TMP text component → typewriter effect
+            TextMeshProUGUI tmpText = element.GetComponent<TextMeshProUGUI>();
+            if (tmpText != null)
             {
-                yield return StartCoroutine(TypeText(text));
+                yield return StartCoroutine(TypeText(tmpText));
             }
-
-            // Wait before showing next element
-            yield return new WaitForSeconds(delayBetween);
+            else
+            {
+                // Wait a bit before showing the next element (for images etc.)
+                yield return new WaitForSeconds(delayBetween);
+            }
         }
     }
 
-    IEnumerator TypeText(Text textComponent)
+    IEnumerator TypeText(TextMeshProUGUI tmpText)
     {
-        string fullText = textComponent.text;
-        textComponent.text = ""; // clear first
+        string fullText = tmpText.text;
+        tmpText.text = ""; // clear text before typing
 
         foreach (char c in fullText)
         {
-            textComponent.text += c;
+            tmpText.text += c;
             yield return new WaitForSeconds(typewriterSpeed);
         }
+
+        // wait after finishing text before next element
+        yield return new WaitForSeconds(delayBetween);
     }
 }
