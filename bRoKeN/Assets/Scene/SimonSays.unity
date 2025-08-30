@@ -40558,6 +40558,9 @@ MonoBehaviour:
   - {fileID: 480651626}
   gateSimonUntilSolved: 1
   flickerOnActivate: 1
+  connect4Gate: {fileID: 644179458}
+  requireConnect4Solved: 1
+  forceResetGlowWhileLocked: 1
 --- !u!1001 &1106511067
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47716,7 +47719,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2684593355251235141, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -317.4
+      value: -317.40002
       objectReference: {fileID: 0}
     - target: {fileID: 2684593355251235141, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -47728,15 +47731,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2684593355251235141, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2684593355251235141, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2684593355251235141, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2684593355251235141, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -114862,7 +114865,6 @@ SceneRoots:
   - {fileID: 691966396}
   - {fileID: 1226274351}
   - {fileID: 1196132034}
-  - {fileID: 1314258007}
   - {fileID: 1541475407}
   - {fileID: 1878957157}
   - {fileID: 2028607881}
@@ -114885,6 +114887,7 @@ SceneRoots:
   - {fileID: 27634683}
   - {fileID: 1525242218}
   - {fileID: 196626458}
+  - {fileID: 1314258007}
   - {fileID: 1361969875}
   - {fileID: 266037329}
   - {fileID: 1713855896}

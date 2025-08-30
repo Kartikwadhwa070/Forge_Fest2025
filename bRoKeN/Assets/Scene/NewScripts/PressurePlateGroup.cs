@@ -29,11 +29,23 @@ public class PressurePlateGroup : MonoBehaviour
     [Tooltip("Flicker wires before glowing when unlocking Simon.")]
     public bool flickerOnActivate = true;
 
+    [Header("Connect4 Gate")]
+    [Tooltip("If assigned and required, ALL plates stay disabled until this Connect4 is solved.")]
+    public Connect4Manager connect4Gate;
+
+    [Tooltip("If true, group ignores input and disables all plate colliders until Connect4 is solved.")]
+    public bool requireConnect4Solved = true;
+
+    [Tooltip("If true, when locked, reset all plate glows to normal for visual clarity.")]
+    public bool forceResetGlowWhileLocked = true;
+
+
 
     void OnEnable()
     {
         // Cheap polling keeps setup simple (no manual event wiring)
         InvokeRepeating(nameof(CheckState), 0.1f, 0.1f);
+        ApplyGateState(); // NEW
 
         // Lock Simon at start if gating is on
         if (gateSimonUntilSolved && simonSays != null)
@@ -47,6 +59,13 @@ public class PressurePlateGroup : MonoBehaviour
 
     void CheckState()
     {
+        // NEW: keep plate colliders synced with gate state
+        ApplyGateState();
+
+        // If locked, do nothing else this tick
+        if (requireConnect4Solved && connect4Gate != null && !connect4Gate.IsSolved)
+            return;
+
         if (plates == null || plates.Length == 0) return;
 
         bool all = true;
@@ -65,25 +84,9 @@ public class PressurePlateGroup : MonoBehaviour
             if (!solved)
             {
                 solved = true;
-
-                // 🔓 Unlock Simon
-                if (simonSays != null && gateSimonUntilSolved)
-                    simonSays.SetInteractionEnabled(true);
-
-                // ✨ Player feedback: wires flicker then glow
-                if (wiresToTurnOn != null)
-                {
-                    foreach (var w in wiresToTurnOn)
-                    {
-                        if (!w) continue;
-                        if (flickerOnActivate) StartCoroutine(w.FlickerThenGlow()); // visual+sfx
-                        else w.SetGlowingState();                                  // instant glow
-                    }
-                }
-
                 onAllPressed?.Invoke();
             }
-            if (!latchWhenSolved) solved = false; // allow repeated firing if desired
+            if (!latchWhenSolved) solved = false;
         }
         else
         {
@@ -91,6 +94,22 @@ public class PressurePlateGroup : MonoBehaviour
             if (!latchWhenSolved) solved = false;
         }
     }
+    void ApplyGateState()
+    {
+        bool locked = requireConnect4Solved && connect4Gate != null && !connect4Gate.IsSolved; // ← uses Connect4Manager.IsSolved
+        if (plates == null) return;
+
+        foreach (var p in plates)
+        {
+            if (!p) continue;
+            var col = p.GetComponent<Collider>();
+            if (col) col.enabled = !locked;              // hard-disable interaction
+
+            if (locked && forceResetGlowWhileLocked && p.glow)
+                p.glow.SetNormalState();                 // make it obvious they’re off
+        }
+    }
+
 
 
     public void ResetGroup()
@@ -104,5 +123,6 @@ public class PressurePlateGroup : MonoBehaviour
         // Relock Simon on reset if gating is on
         if (gateSimonUntilSolved && simonSays != null)
             simonSays.SetInteractionEnabled(false);
+        ApplyGateState(); // NEW: re-apply gate after reset
     }
 }
