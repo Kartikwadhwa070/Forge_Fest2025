@@ -9,8 +9,11 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: e1951b8739385d44eacafa64c8f7206d
   - enabled: 1
-    path: Assets/Scenes/SetupByHaddi.unity
-    guid: 30d55c537071a3548bdd29744f638471
+    path: Assets/Scene/NarrationScene.unity
+    guid: 9e545619edbb1514e8ef8419bc88a8eb
+  - enabled: 1
+    path: Assets/Scene/FinalSetup.unity
+    guid: b61288254d863a44da7db693fe628783
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

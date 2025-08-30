@@ -10269,7 +10269,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 266037328}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: a976901f6f83a4c45a7fdea7470d86b3, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: be8fac3520ef1ba4789b27a154dc482a, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -10283,14 +10283,12 @@ VideoPlayer:
   m_TimeUpdateMode: 2
   m_PlaybackSpeed: 1
   m_AudioOutputMode: 2
-  m_TargetAudioSources:
-  - {fileID: 0}
-  m_DirectAudioVolumes:
-  - 1
+  m_TargetAudioSources: []
+  m_DirectAudioVolumes: []
   m_Url: 
-  m_EnabledAudioTracks: 01
-  m_DirectAudioMutes: 00
-  m_ControlledAudioTrackCount: 1
+  m_EnabledAudioTracks: 
+  m_DirectAudioMutes: 
+  m_ControlledAudioTrackCount: 0
   m_PlayOnAwake: 1
   m_SkipOnDrop: 1
   m_Looping: 0
@@ -29113,7 +29111,10 @@ MonoBehaviour:
   startPosition: {fileID: 0}
   respawnScreen: {fileID: 0}
   speed: 5
+  sprintSpeed: 8
   gravity: -9.81
+  sprintFOVIncrease: 5
+  fovTransitionSpeed: 8
   mouseSensitivity: 2
   crouchSpeed: 2.5
   jumpHeight: 1
@@ -36229,6 +36230,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 31968169704779145, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
+      propertyPath: m_VideoClip
+      value: 
+      objectReference: {fileID: 32900000, guid: ffc71d3ceab625f469b804b59561f052, type: 3}
+    - target: {fileID: 31968169704779145, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
+      propertyPath: m_ControlledAudioTrackCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 31968169704779145, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
+      propertyPath: m_DirectAudioMutes.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 31968169704779145, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
+      propertyPath: m_DirectAudioVolumes.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 31968169704779145, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
+      propertyPath: m_EnabledAudioTracks.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 31968169704779145, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
+      propertyPath: m_TargetAudioSources.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1462582983661703803, guid: c4d6fbc91297057428c8a54e04c99393, type: 3}
       propertyPath: m_LocalPosition.x
       value: 400.2712
@@ -40923,7 +40948,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8912213946440712836, guid: a70349ac214de2a43bea8a0bc5ea41ee, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -41358,7 +41383,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3613113480306212929, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
       propertyPath: speed
-      value: 50
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3613113480306212929, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
+      propertyPath: sprintSpeed
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 4191534181965836016, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
       propertyPath: m_Enabled
