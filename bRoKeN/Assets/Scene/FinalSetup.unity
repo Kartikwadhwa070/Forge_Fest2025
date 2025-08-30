@@ -47915,7 +47915,7 @@ PrefabInstance:
       objectReference: {fileID: 1713855892}
     - target: {fileID: 467790595649253363, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: markSolvedOnStart
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 467790595649253363, guid: ba55477917049794da2d411757c94b6e, type: 3}
       propertyPath: wiresToFlicker.Array.size
