@@ -28032,7 +28032,10 @@ MonoBehaviour:
   startPosition: {fileID: 0}
   respawnScreen: {fileID: 0}
   speed: 5
+  sprintSpeed: 8
   gravity: -9.81
+  sprintFOVIncrease: 5
+  fovTransitionSpeed: 8
   mouseSensitivity: 2
   crouchSpeed: 2.5
   jumpHeight: 1
@@ -39536,7 +39539,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3613113480306212929, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
       propertyPath: speed
-      value: 50
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3613113480306212929, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
+      propertyPath: sprintSpeed
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 3613113480306212929, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
+      propertyPath: sprintFOVIncrease
+      value: 21
       objectReference: {fileID: 0}
     - target: {fileID: 4191534181965836016, guid: 7c622b8c7ffea7645bd61193c1d48450, type: 3}
       propertyPath: m_Enabled
@@ -72649,7 +72660,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -5609321221556402741, guid: fa29e0c0bbbce95418a0a5b1b82ec789, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2064837118804292166, guid: fa29e0c0bbbce95418a0a5b1b82ec789, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'

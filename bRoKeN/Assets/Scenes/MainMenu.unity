@@ -291,7 +291,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Tiny Tinker
+  m_text: LeftBroken
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3409c6ab24e53c34f822616682cf29a2, type: 2}
   m_sharedMaterial: {fileID: -427041936657697671, guid: 3409c6ab24e53c34f822616682cf29a2, type: 2}
