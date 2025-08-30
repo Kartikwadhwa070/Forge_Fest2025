@@ -37,6 +37,7 @@ public class SimonSays : MonoBehaviour
     private Vector3 originalStartButtonPosition;
     private bool[] buttonPressed = new bool[4];
     private bool startButtonPressed = false;
+    private Color[] originalLightColors = new Color[4];
 
     private Camera playerCamera;
 
@@ -58,11 +59,14 @@ public class SimonSays : MonoBehaviour
         if (startButton != null)
             originalStartButtonPosition = startButton.localPosition;
 
-        // Turn off all lights initially
+        // Turn off all lights initially and store their original colors
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
+            {
+                originalLightColors[i] = lights[i].color;
                 lights[i].enabled = false;
+            }
         }
     }
 
@@ -328,7 +332,7 @@ public class SimonSays : MonoBehaviour
         {
             if (lights[i] != null)
             {
-                lights[i].color = Color.white;
+                lights[i].color = originalLightColors[i];
                 lights[i].enabled = false;
             }
         }
