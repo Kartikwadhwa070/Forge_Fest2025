@@ -1,56 +1,56 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using System.Collections;
 
-public class DialogueSequenceList : MonoBehaviour
+public class SequentialUI : MonoBehaviour
 {
-    [System.Serializable]
-    public class DialogueElement
+    [Header("Assign your UI elements in order (Image/Text/Image/Text...)")]
+    public GameObject[] uiElements;
+
+    [Header("Delay Settings")]
+    public float delayBetween = 1f; // time between elements appearing
+    public bool useTypewriter = true;
+    public float typewriterSpeed = 0.05f; // for text only
+
+    void Start()
     {
-        public Sprite image;          // The image to show
-        [TextArea] public string text; // The text to type out
-    }
-
-    [Header("Setup")]
-    public GameObject imagePrefab;   // Prefab with an Image
-    public GameObject textPrefab;    // Prefab with a TMP Text
-    public Transform parent;         // Parent container (e.g., Vertical Layout Group)
-    public float typewriterSpeed = 0.05f;
-
-    [Header("Dialogue Elements")]
-    public List<DialogueElement> sequence = new List<DialogueElement>();
-
-    private void Start()
-    {
-        StartCoroutine(PlaySequence());
-    }
-
-    IEnumerator PlaySequence()
-    {
-        foreach (var element in sequence)
+        // Hide everything at the start
+        foreach (GameObject element in uiElements)
         {
-            // --- Create Image ---
-            GameObject newImageObj = Instantiate(imagePrefab, parent);
-            Image img = newImageObj.GetComponent<Image>();
-            img.sprite = element.image;
-            newImageObj.SetActive(true);
+            element.SetActive(false);
+        }
 
-            // --- Create Text ---
-            GameObject newTextObj = Instantiate(textPrefab, parent);
-            TMP_Text tmp = newTextObj.GetComponent<TMP_Text>();
-            tmp.text = ""; // start empty
+        // Start the sequence
+        StartCoroutine(ShowElementsSequentially());
+    }
 
-            // --- Typewriter effect ---
-            foreach (char c in element.text)
+    IEnumerator ShowElementsSequentially()
+    {
+        foreach (GameObject element in uiElements)
+        {
+            element.SetActive(true);
+
+            // If it's a text and typewriter is enabled
+            Text text = element.GetComponent<Text>();
+            if (useTypewriter && text != null)
             {
-                tmp.text += c;
-                yield return new WaitForSeconds(typewriterSpeed);
+                yield return StartCoroutine(TypeText(text));
             }
 
-            // Wait for space before continuing (optional)
-            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+            // Wait before showing next element
+            yield return new WaitForSeconds(delayBetween);
+        }
+    }
+
+    IEnumerator TypeText(Text textComponent)
+    {
+        string fullText = textComponent.text;
+        textComponent.text = ""; // clear first
+
+        foreach (char c in fullText)
+        {
+            textComponent.text += c;
+            yield return new WaitForSeconds(typewriterSpeed);
         }
     }
 }
