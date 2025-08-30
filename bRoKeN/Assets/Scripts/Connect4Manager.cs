@@ -46,7 +46,7 @@ public class Connect4Manager : MonoBehaviour
     public List<WireGlowController> nextPuzzleWires = new List<WireGlowController>();
 
     // ------------------------------------------------------------------
-    // On-solve actions (NEW)
+    // On-solve actions
     // ------------------------------------------------------------------
     [Header("On Solve Actions")]
     [Tooltip("If true, play the win cutscene when the player solves the puzzle.")]
@@ -54,6 +54,13 @@ public class Connect4Manager : MonoBehaviour
 
     [Tooltip("If true, visibly activate the next puzzle by flickering/glowing its wires.")]
     public bool activateNextPuzzleOnSolve = true;
+
+    // ------------------------------------------------------------------
+    // Debug / QA
+    // ------------------------------------------------------------------
+    [Header("Debug / QA")]
+    [Tooltip("If true, treat this puzzle as already solved when the scene starts (skips gameplay).")]
+    public bool markSolvedOnStart = false; // NEW
 
     // Audio clips for various events.
     [Header("Audio")]
@@ -91,6 +98,9 @@ public class Connect4Manager : MonoBehaviour
     // Flag to disable player input while the computer is moving or after a win.
     private bool inputEnabled = true;
 
+    // NEW: prevent double triggers
+    private bool puzzleSolved = false; // NEW
+
     // Awake is called before Start.
     void Awake()
     {
@@ -115,6 +125,13 @@ public class Connect4Manager : MonoBehaviour
         {
             inputEnabled = false;
             StartCoroutine(WaitForRequiredWire());
+        }
+
+        // NEW: QA toggle to auto-solve on start
+        if (markSolvedOnStart)
+        {
+            Debug.Log("[Connect4] markSolvedOnStart is enabled — auto-solving.");
+            HandlePuzzleSolved(playWinAudio: false); // skip loud win audio on boot
         }
     }
 
@@ -152,7 +169,9 @@ public class Connect4Manager : MonoBehaviour
             Destroy(disc);
         }
         activeDiscs.Clear();
-        inputEnabled = true;
+
+        // Only allow input if not solved yet
+        inputEnabled = !puzzleSolved; // NEW
 
         if (audioSource != null && resetSound != null)
         {
@@ -198,7 +217,7 @@ public class Connect4Manager : MonoBehaviour
 
     public void OnColumnButtonPressed(int column)
     {
-        if (!inputEnabled)
+        if (!inputEnabled || puzzleSolved) // NEW guard
             return;
 
         int row = InsertDisc(column, DiscType.Player);
@@ -207,24 +226,7 @@ public class Connect4Manager : MonoBehaviour
             if (CheckWin(column, row, (int)DiscType.Player))
             {
                 Debug.Log("Player won!");
-                if (audioSource != null && playerWinSound != null)
-                    audioSource.PlayOneShot(playerWinSound);
-
-                // -----------------------------
-                // NEW: On-solve flow
-                // -----------------------------
-                if (activateNextPuzzleOnSolve)
-                {
-                    ActivateNextPuzzle(); // visibly power up next puzzle (flicker+glow wires)
-                }
-
-                if (playCutsceneOnSolve)
-                {
-                    StartWinCutscene();   // optional: play end cutscene + prompt
-                }
-
-                // Freeze gameplay after a win (keep solved state).
-                inputEnabled = false;
+                HandlePuzzleSolved(playWinAudio: true); // NEW centralized flow
                 return;
             }
 
@@ -281,7 +283,8 @@ public class Connect4Manager : MonoBehaviour
                 }
             }
         }
-        inputEnabled = true;
+        if (!puzzleSolved) // NEW: don't re-enable input if already solved via some other path
+            inputEnabled = true;
     }
 
     IEnumerator ResetBoardAfterDelay()
@@ -330,7 +333,27 @@ public class Connect4Manager : MonoBehaviour
     }
 
     // -----------------------------
-    // NEW: visibly activate next puzzle
+    // NEW: central on-solve flow
+    // -----------------------------
+    private void HandlePuzzleSolved(bool playWinAudio)
+    {
+        if (puzzleSolved) return;
+        puzzleSolved = true;
+
+        if (playWinAudio && audioSource != null && playerWinSound != null)
+            audioSource.PlayOneShot(playerWinSound);
+
+        if (activateNextPuzzleOnSolve)
+            ActivateNextPuzzle();
+
+        if (playCutsceneOnSolve)
+            StartWinCutscene();
+
+        inputEnabled = false; // freeze gameplay when solved
+    }
+
+    // -----------------------------
+    // visibly activate next puzzle
     // -----------------------------
     private void ActivateNextPuzzle()
     {
@@ -354,7 +377,7 @@ public class Connect4Manager : MonoBehaviour
     }
 
     // -----------------------------
-    // NEW: optional win cutscene
+    // optional win cutscene
     // -----------------------------
     private void StartWinCutscene()
     {
@@ -382,7 +405,10 @@ public class Connect4Manager : MonoBehaviour
             yield return null; // Wait until the required wire is glowing.
         }
         Debug.Log("Required wire is glowing! Gameplay unlocked.");
-        inputEnabled = true; // Enable gameplay.
+
+        // NEW: Do not re-enable input if the puzzle is already marked solved
+        if (!puzzleSolved)
+            inputEnabled = true;
     }
 
     // This method is called when the win video finishes playing.
@@ -397,4 +423,13 @@ public class Connect4Manager : MonoBehaviour
 
         Debug.Log("Win video finished. Press P to go back to the Main Menu to play again.");
     }
+
+#if UNITY_EDITOR
+    // Handy dev utility from the component's context menu
+    [ContextMenu("DEV: Mark Solved Now")]
+    private void Dev_MarkSolvedNow()
+    {
+        HandlePuzzleSolved(playWinAudio: false);
+    }
+#endif
 }
