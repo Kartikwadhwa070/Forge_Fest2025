@@ -22,14 +22,14 @@ public class Connect4Manager : MonoBehaviour
         public Transform[] slots;
     }
 
-    // Array of columns – assign these in the Inspector.
+    // Array of columns ï¿½ assign these in the Inspector.
     public Column[] columns;
 
     // Disc prefabs for the player and computer. Assign your 3D disc models here.
     public GameObject playerDiscPrefab;
     public GameObject computerDiscPrefab;
 
-    // Range for the computer’s move delay (in seconds).
+    // Range for the computerï¿½s move delay (in seconds).
     public float minDelay = 1.0f;
     public float maxDelay = 2.0f;
 
