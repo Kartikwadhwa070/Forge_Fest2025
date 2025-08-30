@@ -152,7 +152,7 @@ public class SimonSays : MonoBehaviour
 
         startButtonPressed = true;
 
-        Vector3 pressedPosition = originalStartButtonPosition + Vector3.back * startButtonPressDepth;
+        Vector3 pressedPosition = originalStartButtonPosition + startButton.forward * -startButtonPressDepth;
         startButton.localPosition = pressedPosition;
 
         yield return new WaitForSeconds(0.15f);
@@ -199,7 +199,7 @@ public class SimonSays : MonoBehaviour
 
         buttonPressed[buttonIndex] = true;
 
-        Vector3 pressedPosition = originalButtonPositions[buttonIndex] + Vector3.back * buttonPressDepth;
+        Vector3 pressedPosition = originalButtonPositions[buttonIndex] + buttons[buttonIndex].forward * -buttonPressDepth;
         buttons[buttonIndex].localPosition = pressedPosition;
 
         yield return new WaitForSeconds(0.1f);
