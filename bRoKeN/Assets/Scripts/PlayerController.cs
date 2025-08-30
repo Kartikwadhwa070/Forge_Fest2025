@@ -15,16 +15,22 @@ public class PlayerController : MonoBehaviour
 
     [Header("Movement and Gravity")]
     public float speed = 5f;
+    public float sprintSpeed = 8f;
     public float gravity = -9.81f;
-
     private CharacterController characterController;
     private Vector3 velocity;
     private bool isGrounded;
-
     private CharacterPusher pusher;
+
+    [Header("Sprint Settings")]
+    public float sprintFOVIncrease = 5f; // How much to increase FOV when sprinting
+    public float fovTransitionSpeed = 8f; // How fast FOV changes
 
     [Header("Camera")]
     public float mouseSensitivity = 2;
+    private Camera playerCamera;
+    private float originalFOV;
+    private bool isSprinting = false;
 
     [Header("Jump & Crouch")]
     public float crouchSpeed = 2.5f;
@@ -37,6 +43,15 @@ public class PlayerController : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         pusher = GetComponent<CharacterPusher>();
+
+        // Get camera reference and store original FOV
+        playerCamera = Camera.main;
+        if (playerCamera == null)
+            playerCamera = FindObjectOfType<Camera>();
+
+        if (playerCamera != null)
+            originalFOV = playerCamera.fieldOfView;
+
         if (characterController == null)
         {
             Debug.LogError("CharacterController component is missing on this GameObject.");
@@ -65,6 +80,7 @@ public class PlayerController : MonoBehaviour
 
         HandleCameraMovement();
         HandlePlayerMovement();
+        HandleSprint();
 
         velocity.y += gravity * Time.deltaTime;
         characterController.Move(velocity * Time.deltaTime);
@@ -80,15 +96,40 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void HandleSprint()
+    {
+        // Check if player is holding shift and moving
+        bool wantsToSprint = Input.GetKey(KeyCode.LeftShift) && !isCrouching &&
+                            (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) ||
+                             Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D));
+
+        isSprinting = wantsToSprint;
+
+        // Handle FOV change for sprint effect
+        if (playerCamera != null)
+        {
+            float targetFOV = isSprinting ? originalFOV + sprintFOVIncrease : originalFOV;
+            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV,
+                                                  Time.deltaTime * fovTransitionSpeed);
+        }
+    }
+
     void HandlePlayerMovement()
     {
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
-
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
-        float currentSpeed = isCrouching ? crouchSpeed : speed;
+
+        // Determine current speed based on state
+        float currentSpeed = speed;
+        if (isCrouching)
+            currentSpeed = crouchSpeed;
+        else if (isSprinting)
+            currentSpeed = sprintSpeed;
+
         if (pusher != null)
             pusher.SetMoveVector(move * currentSpeed);
+
         characterController.Move(move * currentSpeed * Time.deltaTime);
     }
 
@@ -96,10 +137,11 @@ public class PlayerController : MonoBehaviour
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
         transform.Rotate(Vector3.up * mouseX);
 
-        float verticalLookRotation = Camera.main.transform.localEulerAngles.x - mouseY;
-        Camera.main.transform.localRotation = Quaternion.Euler(verticalLookRotation, 0, 0);
+        float verticalLookRotation = playerCamera.transform.localEulerAngles.x - mouseY;
+        playerCamera.transform.localRotation = Quaternion.Euler(verticalLookRotation, 0, 0);
     }
 
     public void HandleJump()
@@ -129,14 +171,12 @@ public class PlayerController : MonoBehaviour
     void Die()
     {
         isDead = true;
-
         // Show respawn screen
         if (respawnScreen != null)
         {
             respawnScreen.SetActive(true);
         }
-
-        // Lock cursor
+        // Unlock cursor
         Cursor.lockState = CursorLockMode.None;
     }
 
@@ -145,4 +185,9 @@ public class PlayerController : MonoBehaviour
         // Restart the scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
+    // Public properties for other scripts to check player state
+    public bool IsSprinting() => isSprinting;
+    public bool IsCrouching() => isCrouching;
+    public bool IsGrounded() => isGrounded;
 }
