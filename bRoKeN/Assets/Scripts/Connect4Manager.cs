@@ -31,12 +31,39 @@ public class Connect4Manager : MonoBehaviour
     public float minDelay = 1.0f;
     public float maxDelay = 2.0f;
 
-    // Wire control for freezing gameplay
+    // ------------------------------------------------------------------
+    // Wire control
+    // ------------------------------------------------------------------
     [Header("Wire Control")]
-    public WireGlowController requiredWire; // The wire that must be turned on to start the game
-    public List<WireGlowController> wiresToFlicker; // List of wires to flicker on player win
+    [Tooltip("Wire that must be glowing to allow gameplay (gate). Optional.")]
+    public WireGlowController requiredWire;
+
+    [Tooltip("DEPRECATED: use 'Next Puzzle Wires' below. Kept for back-compat.")]
+    public List<WireGlowController> wiresToFlicker;
+
+    [Header("Next Puzzle Wiring")]
+    [Tooltip("Wire(s) that will flicker+glow to show the NEXT puzzle has been activated.")]
+    public List<WireGlowController> nextPuzzleWires = new List<WireGlowController>();
+
+    // ------------------------------------------------------------------
+    // On-solve actions
+    // ------------------------------------------------------------------
+    [Header("On Solve Actions")]
+    [Tooltip("If true, play the win cutscene when the player solves the puzzle.")]
+    public bool playCutsceneOnSolve = false;
+
+    [Tooltip("If true, visibly activate the next puzzle by flickering/glowing its wires.")]
+    public bool activateNextPuzzleOnSolve = true;
+
+    // ------------------------------------------------------------------
+    // Debug / QA
+    // ------------------------------------------------------------------
+    [Header("Debug / QA")]
+    [Tooltip("If true, treat this puzzle as already solved when the scene starts (skips gameplay).")]
+    public bool markSolvedOnStart = false; // NEW
 
     // Audio clips for various events.
+    [Header("Audio")]
     [Tooltip("Sound played when the player places a disc.")]
     public AudioClip playerPlaceSound;
     [Tooltip("Sound played when the computer places a disc.")]
@@ -52,22 +79,17 @@ public class Connect4Manager : MonoBehaviour
     private AudioSource audioSource;
 
     // VideoPlayer to play a video when the puzzle is solved (player wins).
-    [Header("Video Player")]
+    [Header("Video Player (optional)")]
     public VideoPlayer winVideo; // Assign your VideoPlayer component here via the Inspector
 
-    // Reference to the canvas that holds the VideoPlayer.
-    // This canvas should be disabled on Awake.
+    // Canvas that holds the VideoPlayer & the prompt.
     public GameObject endCanvas;
-
-    // UI prompt message to tell the user to press P to return to the Main Menu.
-    // This should be disabled by default.
     public GameObject promptMessage;
 
     // Flag used to indicate that the win video has finished and the prompt is active.
     private bool promptActive = false;
 
-    // Internal board state where board[col, row] stores:
-    // 0 = empty, 1 = player disc, 2 = computer disc.
+    // Internal board state
     private int[,] board;
 
     // Keep track of instantiated disc GameObjects so we can clear them when resetting.
@@ -76,18 +98,15 @@ public class Connect4Manager : MonoBehaviour
     // Flag to disable player input while the computer is moving or after a win.
     private bool inputEnabled = true;
 
+    // NEW: prevent double triggers
+    private bool puzzleSolved = false; // NEW
+
     // Awake is called before Start.
     void Awake()
     {
         // Ensure that the end canvas and prompt are disabled as soon as this object awakes.
-        if (endCanvas != null)
-        {
-            endCanvas.SetActive(false);
-        }
-        if (promptMessage != null)
-        {
-            promptMessage.SetActive(false);
-        }
+        if (endCanvas != null) endCanvas.SetActive(false);
+        if (promptMessage != null) promptMessage.SetActive(false);
     }
 
     void Start()
@@ -107,6 +126,13 @@ public class Connect4Manager : MonoBehaviour
             inputEnabled = false;
             StartCoroutine(WaitForRequiredWire());
         }
+
+        // NEW: QA toggle to auto-solve on start
+        if (markSolvedOnStart)
+        {
+            Debug.Log("[Connect4] markSolvedOnStart is enabled — auto-solving.");
+            HandlePuzzleSolved(playWinAudio: false); // skip loud win audio on boot
+        }
     }
 
     void Update()
@@ -116,6 +142,15 @@ public class Connect4Manager : MonoBehaviour
         {
             Debug.Log("P pressed. Loading Main Menu...");
             SceneManager.LoadScene("MainMenu");
+        }
+    }
+
+    void OnDisable()
+    {
+        // Safety: unhook video callback if we had one
+        if (winVideo != null)
+        {
+            winVideo.loopPointReached -= OnVideoFinished;
         }
     }
 
@@ -134,7 +169,9 @@ public class Connect4Manager : MonoBehaviour
             Destroy(disc);
         }
         activeDiscs.Clear();
-        inputEnabled = true;
+
+        // Only allow input if not solved yet
+        inputEnabled = !puzzleSolved; // NEW
 
         if (audioSource != null && resetSound != null)
         {
@@ -180,7 +217,7 @@ public class Connect4Manager : MonoBehaviour
 
     public void OnColumnButtonPressed(int column)
     {
-        if (!inputEnabled)
+        if (!inputEnabled || puzzleSolved) // NEW guard
             return;
 
         int row = InsertDisc(column, DiscType.Player);
@@ -189,27 +226,11 @@ public class Connect4Manager : MonoBehaviour
             if (CheckWin(column, row, (int)DiscType.Player))
             {
                 Debug.Log("Player won!");
-                if (audioSource != null && playerWinSound != null)
-                    audioSource.PlayOneShot(playerWinSound);
-
-                // Trigger wire flicker effect when the player wins.
-                TriggerWireFlickerEffect();
-
-                // Enable the canvas and play the win video.
-                if (winVideo != null)
-                {
-                    if (endCanvas != null)
-                        endCanvas.SetActive(true);
-
-                    winVideo.Play();
-                    // Subscribe to the event to know when the video finishes.
-                    winVideo.loopPointReached += OnVideoFinished;
-                }
-
-                inputEnabled = false;  // Freeze gameplay after a win.
+                HandlePuzzleSolved(playWinAudio: true); // NEW centralized flow
                 return;
             }
 
+            // If player filled the selected column, do your existing reset
             if (IsColumnFull(column))
             {
                 Debug.Log("Column " + column + " is full. Resetting board.");
@@ -262,7 +283,8 @@ public class Connect4Manager : MonoBehaviour
                 }
             }
         }
-        inputEnabled = true;
+        if (!puzzleSolved) // NEW: don't re-enable input if already solved via some other path
+            inputEnabled = true;
     }
 
     IEnumerator ResetBoardAfterDelay()
@@ -310,19 +332,68 @@ public class Connect4Manager : MonoBehaviour
         return false;
     }
 
-    private void TriggerWireFlickerEffect()
+    // -----------------------------
+    // NEW: central on-solve flow
+    // -----------------------------
+    private void HandlePuzzleSolved(bool playWinAudio)
     {
-        if (wiresToFlicker != null && wiresToFlicker.Count > 0)
+        if (puzzleSolved) return;
+        puzzleSolved = true;
+
+        if (playWinAudio && audioSource != null && playerWinSound != null)
+            audioSource.PlayOneShot(playerWinSound);
+
+        if (activateNextPuzzleOnSolve)
+            ActivateNextPuzzle();
+
+        if (playCutsceneOnSolve)
+            StartWinCutscene();
+
+        inputEnabled = false; // freeze gameplay when solved
+    }
+
+    // -----------------------------
+    // visibly activate next puzzle
+    // -----------------------------
+    private void ActivateNextPuzzle()
+    {
+        // Prefer the new list; fall back to the legacy one if empty.
+        List<WireGlowController> list = (nextPuzzleWires != null && nextPuzzleWires.Count > 0)
+            ? nextPuzzleWires
+            : wiresToFlicker;
+
+        if (list != null && list.Count > 0)
         {
-            foreach (var wire in wiresToFlicker)
+            foreach (var wire in list)
             {
                 if (wire != null)
-                    StartCoroutine(wire.FlickerThenGlow());
+                    StartCoroutine(wire.FlickerThenGlow()); // from WireGlowController
             }
         }
         else
         {
-            Debug.LogWarning("No wires assigned for flicker effect!");
+            Debug.LogWarning("No wires assigned for next puzzle activation!");
+        }
+    }
+
+    // -----------------------------
+    // optional win cutscene
+    // -----------------------------
+    private void StartWinCutscene()
+    {
+        if (winVideo != null)
+        {
+            if (endCanvas != null) endCanvas.SetActive(true);
+            if (promptMessage != null) promptMessage.SetActive(false);
+            promptActive = false;
+
+            winVideo.loopPointReached -= OnVideoFinished; // avoid double-subscribe
+            winVideo.loopPointReached += OnVideoFinished;
+            winVideo.Play();
+        }
+        else
+        {
+            Debug.LogWarning("Play Cutscene On Solve is enabled, but no VideoPlayer is assigned.");
         }
     }
 
@@ -334,25 +405,31 @@ public class Connect4Manager : MonoBehaviour
             yield return null; // Wait until the required wire is glowing.
         }
         Debug.Log("Required wire is glowing! Gameplay unlocked.");
-        inputEnabled = true; // Enable gameplay.
+
+        // NEW: Do not re-enable input if the puzzle is already marked solved
+        if (!puzzleSolved)
+            inputEnabled = true;
     }
 
     // This method is called when the win video finishes playing.
     private void OnVideoFinished(VideoPlayer vp)
     {
-        // Unsubscribe from the event so it doesn't fire again.
         vp.loopPointReached -= OnVideoFinished;
-        // Disable the canvas after the video is complete.
-        if (endCanvas != null)
-        {
-            endCanvas.SetActive(false);
-        }
-        // Activate the prompt message and set the flag.
-        if (promptMessage != null)
-        {
-            promptMessage.SetActive(true);
-        }
+
+        if (endCanvas != null) endCanvas.SetActive(false);
+
+        if (promptMessage != null) promptMessage.SetActive(true);
         promptActive = true;
+
         Debug.Log("Win video finished. Press P to go back to the Main Menu to play again.");
     }
+
+#if UNITY_EDITOR
+    // Handy dev utility from the component's context menu
+    [ContextMenu("DEV: Mark Solved Now")]
+    private void Dev_MarkSolvedNow()
+    {
+        HandlePuzzleSolved(playWinAudio: false);
+    }
+#endif
 }
