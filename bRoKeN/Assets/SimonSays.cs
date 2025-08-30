@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,6 +38,9 @@ public class SimonSays : MonoBehaviour
     private bool[] buttonPressed = new bool[4];
     private bool startButtonPressed = false;
 
+    // 🔧 Light fix: remember original colors so we can restore them after failure flashes
+    private Color[] originalLightColors = new Color[4];
+
     private Camera playerCamera;
 
     [Header("Gating")]
@@ -67,11 +70,14 @@ public class SimonSays : MonoBehaviour
         if (startButton != null)
             originalStartButtonPosition = startButton.localPosition;
 
-        // Turn off all lights initially
+        // 🔧 Light fix: cache original colors & turn lights off initially
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
+            {
+                originalLightColors[i] = lights[i].color;
                 lights[i].enabled = false;
+            }
         }
     }
 
@@ -80,7 +86,6 @@ public class SimonSays : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             if (!interactionEnabled) return;
-
             HandleMouseClick();
         }
 
@@ -324,7 +329,7 @@ public class SimonSays : MonoBehaviour
             audioSource.PlayOneShot(failSound);
         }
 
-        // Flash all lights red (if you want to change color temporarily)
+        // Flash all lights red (temporary)
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
@@ -336,12 +341,12 @@ public class SimonSays : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        // Reset light colors and turn off
+        // 🔧 Light fix: restore ORIGINAL colors and turn off
         for (int i = 0; i < lights.Length; i++)
         {
             if (lights[i] != null)
             {
-                lights[i].color = Color.white;
+                lights[i].color = originalLightColors[i];
                 lights[i].enabled = false;
             }
         }
@@ -359,11 +364,7 @@ public class SimonSays : MonoBehaviour
         gameStarted = false; // Reset so start button can be used again
 
         // Add your custom success logic here
-        // For example:
-        // - Open a door
-        // - Give the player an item
-        // - Trigger the next puzzle
-        // - Call another script's function
+        // e.g., open door / trigger next puzzle, etc.
     }
 
     // Public method to restart the game
