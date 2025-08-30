@@ -253,7 +253,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Mother: Sweetheart, close your eyes now, it\u2019s bedtime."
+  m_text: "Mother: Sweetheart, close your eyes, it\u2019s bedtime."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -459,7 +459,6 @@ MonoBehaviour:
   - {fileID: 1377553393}
   - {fileID: 900336075}
   delayBetween: 1
-  useTypewriter: 1
   typewriterSpeed: 0.05
 --- !u!1 &628934027
 GameObject:
@@ -800,7 +799,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Mother: Cross my heart. Now sleep, so tomorrow comes faster.'
+  m_text: "Mother (softly): Maybe\u2026 dreams are magical, who knows? Now close
+    your eyes."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1015,8 +1015,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Mother: I promise, tomorrow I\u2019ll buy you a puzzle toy. But only if
-    you sleep now."
+  m_text: "Mother (smiling): Tomorrow I\u2019ll get you one. But only if you sleep
+    now\u2014dreams come quicker that way."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1396,7 +1396,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -217.5, y: -6.390007}
+  m_AnchoredPosition: {x: -267.62, y: -17.3}
   m_SizeDelta: {x: 755.3, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1633382971
@@ -1419,7 +1419,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Son: Really? You promise?'
+  m_text: 'Son: Dreams? Will I see the toy in my dream?'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
