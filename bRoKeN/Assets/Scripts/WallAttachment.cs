@@ -30,6 +30,8 @@ public class WallAttachment : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log($"[WallAttachment] This script is attached to: {gameObject.name}", gameObject);
+
         if (attachPoints == null || attachPoints.Length == 0)
         {
             Debug.LogError("[WallAttachment] No attach points assigned!");
